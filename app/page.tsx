@@ -9,12 +9,14 @@ import {
 } from "@/function/handle-data";
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
+import { CgSpinner } from "react-icons/cg";
 import { MdArrowDownward, MdOutlineAttachMoney } from "react-icons/md";
 export default function Home() {
   const [getData, setGetData] = useState<any>([]);
   const [symbolData, setSymbolData] = useState<any>([]);
   const [isSort, setIsSort] = useState<boolean>(false);
   const [symbolsMap, setSymbolsMap] = useState<any>([]);
+  const [dataSorted, setDataSorted] = useState<any>([]);
   const domainBinance = "https://data-api.binance.vision/api/v3/ticker/24hr";
   const getDataBinance = async () => {
     // handle get data from binance
@@ -43,32 +45,31 @@ export default function Home() {
   useEffect(() => {
     // handle sort data
     if (isSort) {
-      setSymbolData(
-        getData.sort((a: any, b: any) => {
+      setDataSorted(
+        symbolsMap.sort((a: any, b: any) => {
           return a.quoteVolume - b.quoteVolume;
         })
       );
     } else {
-      setSymbolData(
-        getData.sort((a: any, b: any) => {
+      setDataSorted(
+        symbolsMap.sort((a: any, b: any) => {
           return b.quoteVolume - a.quoteVolume;
         })
       );
     }
-  }, [getData, isSort, symbolsMap]);
+  }, [getData, isSort]);
 
   useEffect(() => {
     // handle check deference data
-    const data =
-      JSON.parse(localStorage.getItem("symbolData") as any) || symbolData;
+    const data = JSON.parse(localStorage.getItem("symbolData") as any);
 
     if (!data || !data[0]?.symbol) {
-      localStorage.setItem("symbolData", JSON.stringify(symbolData));
+      localStorage.setItem("symbolData", JSON.stringify(getData));
       return;
     }
 
     const dataMap = data?.map((item: any) => {
-      const findChange = symbolData?.find((x: any) => {
+      const findChange = getData?.find((x: any) => {
         if (x.symbol == item.symbol) {
           return x;
         }
@@ -84,11 +85,11 @@ export default function Home() {
     localStorage.setItem("symbolData", JSON.stringify(dataMap));
 
     setSymbolsMap(dataMap);
-  }, [symbolData]);
+  }, [getData]);
 
   const RenderDate = useMemo(
     () =>
-      symbolsMap?.map((item: any, index: number) => {
+      dataSorted?.map((item: any, index: number) => {
         const symbolIconHasColor = handleImageSymbol(item.symbol, true)
           ?.icon as string;
         const symbolIconNotColor = handleImageSymbol(item.symbol, false)
@@ -149,9 +150,10 @@ export default function Home() {
           </tr>
         );
       }),
-    [symbolData[0]?.symbol, getData, isSort, symbolData]
+    [symbolData[0]?.symbol, getData, isSort, dataSorted]
   );
 
+  if (!dataSorted || !dataSorted[0]?.symbol) return <Spinner />;
   return (
     <main className="flex    w-full  h-full justify-center py-32  bg-[#fff]">
       <table className="table-auto  font-light border rounded-md overflow-hidden bg-[#f5f6f6]">
@@ -176,3 +178,13 @@ export default function Home() {
     </main>
   );
 }
+
+const Spinner = () => {
+  return (
+    <div className="flex justify-center items-center w-full h-full">
+      <i className="text-4xl animate-spin">
+        <CgSpinner />
+      </i>
+    </div>
+  );
+};
